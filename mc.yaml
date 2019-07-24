@@ -1,0 +1,12 @@
+---
+base: ubuntu:18.04
+install:
+ - maven
+ - openjdk-8-jdk
+---
+#!/bin/bash
+
+
+# Ensure OpenJDK 11 is not present
+sudo apt-get -y purge openjdk-11-*
+

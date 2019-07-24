@@ -1,0 +1,215 @@
+/**
+ * Copyright (c) 2015 - 2019 ooxi
+ *     https://github.com/ooxi/exception-maven-plugin
+ *     violetland@mail.ru
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * In no event will the authors be held liable for any damages arising from the
+ * use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *     claim that you wrote the original software. If you use this software in a
+ *     product, an acknowledgment in the product documentation would be
+ *     appreciated but is not required.
+ *
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *     misrepresented as being the original software.
+ *
+ *  3. This notice may not be removed or altered from any source distribution.
+ */
+package com.github.ooxi.exception;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.github.ooxi.exception.vendor.InstantUtils;
+import com.github.ooxi.exception.vendor.Utf8FileCodeWriter;
+import com.sun.codemodel.ClassType;
+import com.sun.codemodel.JAnnotationUse;
+import com.sun.codemodel.JBlock;
+import com.sun.codemodel.JClass;
+import com.sun.codemodel.JClassAlreadyExistsException;
+import com.sun.codemodel.JCodeModel;
+import com.sun.codemodel.JDefinedClass;
+import com.sun.codemodel.JDocComment;
+import com.sun.codemodel.JInvocation;
+import com.sun.codemodel.JMethod;
+import com.sun.codemodel.JMod;
+import com.sun.codemodel.JPackage;
+import com.sun.codemodel.JVar;
+import java.io.File;
+import java.io.IOException;
+import static java.util.Objects.requireNonNull;
+import java.util.Optional;
+import java.util.function.Consumer;
+import javax.annotation.Generated;
+import static org.apache.commons.lang3.StringEscapeUtils.ESCAPE_HTML4;
+
+/**
+ * Generates Java source code of an exception using the information provided by
+ * {@link ExceptionDeclaration}.
+ *
+ * @author ooxi
+ */
+final class ExceptionSourceGenerator implements Consumer<ExceptionDeclaration> {
+
+	private final Configuration configuration;
+	private final JCodeModel model = new JCodeModel();
+
+	public ExceptionSourceGenerator(Configuration configuration) {
+		this.configuration = requireNonNull(configuration, "`configuration' must not be null");
+	}
+
+
+
+	@Override
+	public void accept(ExceptionDeclaration exception) {
+		try {
+			generateSource(exception);
+		} catch (JClassAlreadyExistsException e) {
+			throw new RuntimeException("Failed generating source for declaration `"+ exception +"'", e);
+		}
+	}
+
+	public void build(File sourceDirectory) throws IOException {
+		model.build(new Utf8FileCodeWriter(sourceDirectory));
+	}
+
+
+
+	private void generateSource(ExceptionDeclaration exception) throws JClassAlreadyExistsException {
+		final JPackage pkgModel = exception.getPackageName().isEmpty()
+			? model.rootPackage()
+			: model._package(exception.getPackageName());
+
+
+		/* Declare and annotate exception
+		 */
+		JDefinedClass exceptionModel = pkgModel._class(
+			getClassMods(exception),
+			exception.getSimpleExceptionClassName(),
+			ClassType.CLASS
+		);
+		exceptionModel = generateGeneratedAnnotation(ExceptionSourceGenerator.class, exceptionModel);
+
+
+		/* Include source XML exception specification in generated
+		 * JavaDoc
+		 */
+		JDocComment javadoc = exceptionModel.javadoc();
+		javadoc.append("<h2>XML source</h2><pre>"+ ESCAPE_HTML4.translate(exception.getXml()) +"</pre>");
+
+
+		/* Specify super class
+		 */
+		final JClass superRef = model.ref(exception.getCanonicalSuperClassName());
+		exceptionModel._extends(superRef);
+
+
+		/* JavaDoc
+		 */
+		if (!exception.getJavaDoc().isEmpty()) {
+			exceptionModel.javadoc().add(exception.getJavaDoc());
+		}
+
+
+		/* @VisibleForTesting?
+		 */
+		if (exception.getVisibility().equals(Visibility.VISIBLE_FOR_TESTING)) {
+			exceptionModel.annotate(VisibleForTesting.class);
+		}
+
+
+		/* Generate constructors
+		 */
+		generateStringThrowableConstructor(exceptionModel, exception.useExceptionChaining());
+		generateThrowableConstructor(exceptionModel, exception.useExceptionChaining());
+		generateStringConstructor(exceptionModel);
+		generateDefaultConstructor(exceptionModel);
+	}
+
+
+
+
+
+	private int getClassMods(ExceptionDeclaration declaration) {
+		int mods = JMod.NONE;
+
+		if (declaration.isFinal()) {
+			mods |= JMod.FINAL;
+		}
+		if (declaration.getVisibility().equals(Visibility.PUBLIC)) {
+			mods |= JMod.PUBLIC;
+		}
+
+		return mods;
+	}
+
+
+
+	public JDefinedClass generateGeneratedAnnotation(Class<?> generator, JDefinedClass clazz) {
+		String generatorName = Optional
+			.ofNullable(generator.getCanonicalName())
+			.orElse(generator.getName());
+
+		final JDocComment javadoc = clazz.javadoc();
+		javadoc.append("<strong>Warning:</strong> AUTOGENERATED, BY <code>" + generatorName + "</code> DO NOT MODIFY.\n\n");
+
+		final JAnnotationUse annotation = clazz.annotate(Generated.class);
+		annotation.param("value", generatorName);
+
+		if (configuration.outputGeneratedDate()) {
+			annotation.param("date", InstantUtils.format(InstantUtils.now()));
+		}
+
+		return clazz;
+	}
+
+	private static void generateStringThrowableConstructor(JDefinedClass clazz, boolean useExceptionChaining) {
+		final JMethod constructor = clazz.constructor(JMod.PUBLIC);
+
+		final JVar msg = constructor.param(String.class, "msg");
+		final JVar cause = constructor.param(Throwable.class, "cause");
+
+		final JBlock body = constructor.body();
+		JInvocation superInvocation = body.invoke("super").arg(msg);
+
+		if (useExceptionChaining) {
+			superInvocation.arg(cause);
+		} else {
+			constructor.body().invoke("initCause").arg(cause);
+		}
+	}
+
+	private static void generateThrowableConstructor(JDefinedClass clazz, boolean useExceptionChaining) {
+		final JMethod constructor = clazz.constructor(JMod.PUBLIC);
+
+		final JVar cause = constructor.param(Throwable.class, "cause");
+
+		final JBlock body = constructor.body();
+		JInvocation superInvocation = body.invoke("super");
+
+		if (useExceptionChaining) {
+			superInvocation.arg(cause);
+		} else {
+			constructor.body().invoke("initCause").arg(cause);
+		}
+	}
+
+	private static void generateStringConstructor(JDefinedClass clazz) {
+		final JMethod constructor = clazz.constructor(JMod.PUBLIC);
+
+		final JVar msg = constructor.param(String.class, "msg");
+
+		constructor.body().invoke("super").arg(msg);
+	}
+
+	private static void generateDefaultConstructor(JDefinedClass clazz) {
+		final JMethod constructor = clazz.constructor(JMod.PUBLIC);
+
+		constructor.body().invoke("super");
+	}
+
+}

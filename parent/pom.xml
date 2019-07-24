@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+ | Copyright (c) 2015 - 2019 ooxi
+ |     https://github.com/ooxi/exception-maven-plugin
+ |     violetland@mail.ru
+ |
+ | This software is provided 'as-is', without any express or implied warranty.
+ | In no event will the authors be held liable for any damages arising from the
+ | use of this software.
+ |
+ | Permission is granted to anyone to use this software for any purpose,
+ | including commercial applications, and to alter it and redistribute it
+ | freely, subject to the following restrictions:
+ |
+ |  1. The origin of this software must not be misrepresented; you must not
+ |     claim that you wrote the original software. If you use this software in a
+ |     product, an acknowledgment in the product documentation would be
+ |     appreciated but is not required.
+ |
+ |  2. Altered source versions must be plainly marked as such, and must not be
+ |     misrepresented as being the original software.
+ |
+ |  3. This notice may not be removed or altered from any source distribution.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!--
+	 | 1 - Initial public release
+	-->
+	<groupId>com.github.ooxi.exception-maven-plugin</groupId>
+	<artifactId>parent</artifactId>
+	<version>1</version>
+	<packaging>pom</packaging>
+
+
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+
+
+	<build>
+
+		<!--
+		 | Build extensions
+		-->
+		<plugins>
+
+			<!--
+			 | Java compiler setup
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+
+
+
+			<!--
+			 | Create source artifact
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+
+			<!--
+			 | Create javadoc artifact
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.4</version>
+
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+
+			<!--
+			 | Changing working directory during JUnit tests
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.2</version>
+				<configuration>
+					<workingDirectory>${project.build.directory}/surefire-working-directory</workingDirectory>
+					<trimStackTrace>false</trimStackTrace>
+
+					<!--
+					 | This is necessary because otherwise
+					 | {@code org.apache.maven.surefire.booter.ForkedBooter}
+					 | cannot be found.
+					 |
+					 | I don't know, why this behaviour has
+					 | only recently surfaced
+					-->
+					<useSystemClassLoader>false</useSystemClassLoader>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

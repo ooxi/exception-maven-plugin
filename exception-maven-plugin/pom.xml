@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+ | Copyright (c) 2015 - 2019 ooxi
+ |     https://github.com/ooxi/exception-maven-plugin
+ |     violetland@mail.ru
+ |
+ | This software is provided 'as-is', without any express or implied warranty.
+ | In no event will the authors be held liable for any damages arising from the
+ | use of this software.
+ |
+ | Permission is granted to anyone to use this software for any purpose,
+ | including commercial applications, and to alter it and redistribute it
+ | freely, subject to the following restrictions:
+ |
+ |  1. The origin of this software must not be misrepresented; you must not
+ |     claim that you wrote the original software. If you use this software in a
+ |     product, an acknowledgment in the product documentation would be
+ |     appreciated but is not required.
+ |
+ |  2. Altered source versions must be plainly marked as such, and must not be
+ |     misrepresented as being the original software.
+ |
+ |  3. This notice may not be removed or altered from any source distribution.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.github.ooxi.exception-maven-plugin</groupId>
+		<artifactId>parent</artifactId>
+		<version>1</version>
+		<relativePath>../parent</relativePath>
+	</parent>
+
+	<!--
+	 | 1.0.0 - Initial public release
+	-->
+	<groupId>com.github.ooxi</groupId>
+	<artifactId>exception-maven-plugin</artifactId>
+	<version>1.0.0</version>
+	<packaging>maven-plugin</packaging>
+
+	<description>
+		Using this Maven Plugin enables exception specification using a
+		minimal declaration without repeating oneself.
+	</description>
+
+
+
+	<dependencies>
+
+		<!--
+		 | @AutoValue
+		-->
+		<dependency>
+			<groupId>com.google.auto.value</groupId>
+			<artifactId>auto-value-annotations</artifactId>
+			<version>1.6.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.auto.value</groupId>
+			<artifactId>auto-value</artifactId>
+			<version>1.6.2</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!--
+		 | Google Truth
+		-->
+		<dependency>
+			<groupId>com.google.truth</groupId>
+			<artifactId>truth</artifactId>
+			<version>0.42</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+		 | JCodeModel
+		-->
+		<dependency>
+			<groupId>com.sun.codemodel</groupId>
+			<artifactId>codemodel</artifactId>
+			<version>2.6</version>
+		</dependency>
+
+		<!--
+		 | JUnit
+		-->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+		 | StringEscapeUtils
+		-->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.6</version>
+		</dependency>
+
+		<!--
+		 | Maven Plugin
+		-->
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-core</artifactId>
+			<version>3.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.maven</groupId>
+			<artifactId>maven-plugin-api</artifactId>
+			<version>3.5.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<version>3.5</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!--
+		 | XmlBeans runtime environment
+		-->
+		<dependency>
+			<groupId>org.apache.xmlbeans</groupId>
+			<artifactId>xmlbeans</artifactId>
+			<version>2.6.0</version>
+		</dependency>
+
+		<!--
+		 | jOOR
+		-->
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>joor</artifactId>
+			<version>0.9.6</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+
+
+
+
+	<build>
+		<!--
+		 | XSD is used during runtime in order to parse exception
+		 | specifications
+		-->
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/xsd</directory>
+			</resource>
+		</resources>
+
+
+
+		<plugins>
+
+			<!--
+			 | Maven Plugin
+			 |
+			 | @see http://stackoverflow.com/a/18999968/2534648
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>3.5</version>
+				<executions>
+					<execution>
+						<id>default-descriptor</id>
+						<goals>
+							<goal>descriptor</goal>
+						</goals>
+						<phase>process-classes</phase>
+					</execution>
+					<execution>
+						<id>help-descriptor</id>
+						<goals>
+							<goal>helpmojo</goal>
+						</goals>
+						<phase>process-classes</phase>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!--
+			 | XmlBeans
+			-->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>xmlbeans-maven-plugin</artifactId>
+				<version>2.3.3</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>xmlbeans</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<javaSource>1.5</javaSource>
+					<noJavac>true</noJavac>
+					<download>true</download>
+					<xmlConfigs>
+						<xmlConfig implementation="java.io.File">${basedir}/src/main/xsdconfig/Exception.xsdconfig</xmlConfig>
+					</xmlConfigs>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
