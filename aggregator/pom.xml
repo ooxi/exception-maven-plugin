@@ -37,15 +37,16 @@
 
 	<!--
 	 | 1 - Initial public release
+	 | 2 - Renamed example project directory
 	-->
 	<groupId>com.github.ooxi.exception-maven-plugin</groupId>
 	<artifactId>aggregator</artifactId>
-	<version>1</version>
+	<version>2</version>
 	<packaging>pom</packaging>
 
 	<modules>
+		<module>../example</module>
 		<module>../exception-maven-plugin</module>
-		<module>../exception-maven-plugin-example</module>
 		<module>../parent</module>
 	</modules>
 </project>

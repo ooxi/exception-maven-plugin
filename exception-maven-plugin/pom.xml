@@ -29,24 +29,40 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.github.ooxi.exception-maven-plugin</groupId>
-		<artifactId>parent</artifactId>
-		<version>1</version>
-		<relativePath>../parent</relativePath>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>9</version>
 	</parent>
 
 	<!--
 	 | 1.0.0 - Initial public release
+	 |
+	 | 1.1.0 - Using Sonatype's OSS parent POM in order to be publishable on
+	 |         Maven Central
+	 |       - Embedded parent project's build instruction into this POM so
+	 |         only one artifact needs to be published on Maven Central
 	-->
 	<groupId>com.github.ooxi</groupId>
 	<artifactId>exception-maven-plugin</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<packaging>maven-plugin</packaging>
 
 	<description>
 		Using this Maven Plugin enables exception specification using a
 		minimal declaration without repeating oneself.
 	</description>
+
+
+
+
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+
 
 
 
@@ -194,6 +210,8 @@
 				</executions>
 			</plugin>
 
+
+
 			<!--
 			 | XmlBeans
 			-->
@@ -216,6 +234,85 @@
 					<xmlConfigs>
 						<xmlConfig implementation="java.io.File">${basedir}/src/main/xsdconfig/Exception.xsdconfig</xmlConfig>
 					</xmlConfigs>
+				</configuration>
+			</plugin>
+
+
+
+			<!--
+			 | Java compiler setup
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.8.0</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
+				</configuration>
+			</plugin>
+
+
+
+			<!--
+			 | Create source artifact
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+
+			<!--
+			 | Create javadoc artifact
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.4</version>
+
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+
+			<!--
+			 | Changing working directory during JUnit tests
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.22.2</version>
+				<configuration>
+					<workingDirectory>${project.build.directory}/surefire-working-directory</workingDirectory>
+					<trimStackTrace>false</trimStackTrace>
+
+					<!--
+					 | This is necessary because otherwise
+					 | {@code org.apache.maven.surefire.booter.ForkedBooter}
+					 | cannot be found.
+					 |
+					 | I don't know, why this behaviour has
+					 | only recently surfaced
+					-->
+					<useSystemClassLoader>false</useSystemClassLoader>
 				</configuration>
 			</plugin>
 		</plugins>
