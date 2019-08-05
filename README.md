@@ -6,6 +6,6 @@ Declarative generation of Java exceptions.
 ## Quickstart
 
 ```
-(cd 'aggregator' && mc _ mvn clean install)
+mc _ mvn --file aggregator clean install
 ```
 

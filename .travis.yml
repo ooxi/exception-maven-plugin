@@ -1,0 +1,14 @@
+# Build target and execute test cases
+script:
+ - mc _ mvn --file aggregator clean install
+
+ # Install all required dependencies
+install:
+ - npm install -g mini-cross
+ - mc _ echo 'Install successful'
+
+language: node_js
+
+services:
+ - docker
+
