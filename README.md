@@ -1,4 +1,4 @@
-# exception-maven-plugin
+# exception-maven-plugin [![Build Status](https://travis-ci.org/ooxi/exception-maven-plugin.svg?branch=master)](https://travis-ci.org/ooxi/exception-maven-plugin)
 
 Declarative generation of Java exceptions.
 
